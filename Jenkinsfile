@@ -21,8 +21,10 @@ node {
 
         stage('Setup Docker Buildx') {
             script {
-                sh 'docker buildx create --use || true' // Ensure Buildx is enabled
-                sh 'docker buildx inspect --bootstrap'
+                //sh 'docker buildx create --use || true' // Ensure Buildx is enabled
+                //sh 'docker buildx inspect --bootstrap'
+                sh '/usr/local/bin/docker buildx create --use || true' // Ensure Buildx is enabled
+                sh '/usr/local/bin/docker buildx inspect --bootstrap'
             }
         }
 
@@ -31,15 +33,25 @@ node {
                 withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS',
                                                  usernameVariable: 'DOCKER_USER',
                                                  passwordVariable: 'DOCKER_PASS')]) {
-                    sh "docker login -u $DOCKER_USER -p $DOCKER_PASS"
+                    //sh "docker login -u $DOCKER_USER -p $DOCKER_PASS"
+                    sh "/usr/local/bin/docker login -u $DOCKER_USER -p $DOCKER_PASS"
                 }
             }
         }
 
         stage('Build and Push Docker Image') {
+           /*
             script {
                 sh """
                 docker buildx build --platform=${platforms} \
+                    -t ${dockerImageTag} \
+                    -t docker.io/${dockerHubImage} \
+                    --push .
+                """
+            }*/
+            script {
+                sh """
+                /usr/local/bin/docker buildx build --platform=${platforms} \
                     -t ${dockerImageTag} \
                     -t docker.io/${dockerHubImage} \
                     --push .
