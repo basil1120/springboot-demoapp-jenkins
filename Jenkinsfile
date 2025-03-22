@@ -13,6 +13,8 @@ try{
             branch: 'main'
      }
     stage('Build docker') {
+         echo $PATH
+         //export PATH=$PATH:/usr/local/bin:/usr/bin:/usr/sbin
          dockerImage = docker.build("springboot-demoapp-jenkins:${env.BUILD_NUMBER}")
     }
     stage('Deploy docker'){
