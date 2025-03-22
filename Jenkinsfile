@@ -12,6 +12,10 @@ node {
                 branch: 'main'
         }
 
+        stage('Ensure Docker is Available') {
+            sh 'export PATH=$PATH:/opt/homebrew/bin && docker version'
+        }
+
         stage('Setup Docker Buildx') {
             script {
                 sh 'docker buildx create --use || true' // Ensure Buildx is enabled
