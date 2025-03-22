@@ -20,55 +20,16 @@ node {
 
         stage('Setup Docker Buildx') {
             script {
-                //sh 'docker buildx create --use || true' // Ensure Buildx is enabled
-                //sh 'docker buildx inspect --bootstrap'
-                sh '/usr/local/bin/docker buildx create --use || true' // Ensure Buildx is enabled
+                sh '/usr/local/bin/docker buildx create --use || true'
                 sh '/usr/local/bin/docker buildx inspect --bootstrap'
+                sh '/usr/local/bin/docker buildx ls' // Debug: List builders
             }
         }
 
         stage('Docker Login - STEP 1') {
             sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
+            sh '/usr/local/bin/docker info' // Debug: Verify login
         }
-
-        /*
-        stage('Docker Login - STEP 2') {
-            script {
-                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS',
-                                                 usernameVariable: 'DOCKER_USER',
-                                                 passwordVariable: 'DOCKER_PASS')]) {
-                    //sh "docker login -u $DOCKER_USER -p $DOCKER_PASS"
-                    sh "/usr/local/bin/docker login -u $DOCKER_USER -p $DOCKER_PASS"
-                }
-            }
-        }*/
-        /*
-        stage('Build and Push Docker Image') {
-            script {
-                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS',
-                usernameVariable: 'DOCKER_USERNAME',
-                passwordVariable: 'DOCKER_PASSWORD')]) {
-
-                    // Securely log in without exposing secrets
-                    echo "********* Start Login Phase 1 ********* "
-                    sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
-                    echo "*********  End Login Phase 1 ********* "
-
-                    echo "---- START Login Phase 2 ----"
-                    sh '/usr/local/bin/docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}'
-                    echo "---- END Login Phase 2 ----"
-
-                    echo "Building and Pushing Image Name: ${dockerImageTag}"
-                    sh """
-                    /usr/local/bin/docker buildx build --platform=${platforms} \
-                        -t ${dockerImageTag} \
-                        -t docker.io/${dockerHubImage} \
-                        --push .
-                    """
-                }
-            }
-        }*/
-
 
         stage('Build and Push Docker Image') {
             script {
@@ -79,7 +40,6 @@ node {
                 sh 'echo "$DOCKER_PASSWORD"'
                 echo "************************************************"
 
-                sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
                 sh """
                 /usr/local/bin/docker buildx build --platform=${platforms} \
                     -t ${dockerImageTag} \
