@@ -11,7 +11,8 @@
 #EXPOSE $PORT
 #ENTRYPOINT ["java","-jar","-Xmx1024M","-Dserver.port=${PORT}","app.jar"]
 # Docker Build Maven Stage
-FROM maven:3-openjdk-17-alpine AS build
+#FROM maven:3-openjdk-17-alpine AS build
+FROM maven:3.6.3-openjdk-17-alpine AS build
 # Copy folder into Docker container
 WORKDIR /opt/app
 COPY ./ /opt/app
