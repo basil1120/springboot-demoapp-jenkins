@@ -45,16 +45,26 @@ node {
         }*/
 
         stage('Build and Push Docker Image') {
-           /*
             script {
-                sh """
-                docker buildx build --platform=${platforms} \
-                    -t ${dockerImageTag} \
-                    -t docker.io/${dockerHubImage} \
-                    --push .
-                """
-            }*/
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                    sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+
+                    echo "Building and Pushing Image Name: ${dockerImageTag}"
+                    sh """
+                    /usr/local/bin/docker buildx build --platform=${platforms} \
+                        -t ${dockerImageTag} \
+                        -t docker.io/${dockerHubImage} \
+                        --push .
+                    """
+                }
+            }
+        }
+
+        /*
+        stage('Build and Push Docker Image') {
             script {
+                echo "Building Image Name : ${dockerImageTag}"
+                sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
                 sh """
                 /usr/local/bin/docker buildx build --platform=${platforms} \
                     -t ${dockerImageTag} \
@@ -62,7 +72,7 @@ node {
                     --push .
                 """
             }
-        }
+        }*/
 
         stage('Deploy Docker Container') {
             script {
