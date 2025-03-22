@@ -28,7 +28,12 @@ node {
             }
         }
 
-        stage('Docker Login') {
+        stage('Docker Login - STEP 1') {
+            sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
+        }
+
+        /*
+        stage('Docker Login - STEP 2') {
             script {
                 withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS',
                                                  usernameVariable: 'DOCKER_USER',
@@ -37,7 +42,7 @@ node {
                     sh "/usr/local/bin/docker login -u $DOCKER_USER -p $DOCKER_PASS"
                 }
             }
-        }
+        }*/
 
         stage('Build and Push Docker Image') {
            /*
