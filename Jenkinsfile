@@ -16,7 +16,7 @@ try{
     stage('Deploy docker'){
           echo "Docker Image Tag Name: ${dockerImageTag}"
           sh "docker stop springboot-demoapp-jenkins || true && docker rm springboot-demoapp-jenkins || true"
-          sh "docker run --name springboot-demoapp-jenkins -d -p 8081:8081 springboot-demoapp-jenkins:${env.BUILD_NUMBER}"
+          sh "docker run --name springboot-demoapp-jenkins -d -p 8181:8181 springboot-demoapp-jenkins:${env.BUILD_NUMBER}"
     }
 }catch(e){
     currentBuild.result = "FAILED"
