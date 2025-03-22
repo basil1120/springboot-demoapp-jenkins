@@ -1,59 +1,81 @@
 node {
-// Maven:  -B -f /Users/basam/.jenkins/workspace/springboot-demoapp-jenkins/pom.xml install
-    def WORKSPACE = "/Users/basam/.jenkins/workspace/springboot-demoapp-jenkins"
-    //def WORKSPACE = "/var/lib/jenkins/workspace/springboot-demoapp-jenkins"
-    def dockerImageTag = "springboot-demoapp-jenkins${env.BUILD_NUMBER}"
-try{
-    notifyBuild('STARTED')
-    stage('Clone Repo') {
-        // for display purposes
-        // Get some code from a GitHub repository
-        git url: 'https://github.com/basil1120/springboot-demoapp-jenkins.git',
-            credentialsId: 'CREDENTIALS_GITHUB',
-            branch: 'main'
-     }
-    stage('Build docker') {
-         echo $PATH
-         //export PATH=$PATH:/usr/local/bin:/usr/bin:/usr/sbin
-         dockerImage = docker.build("springboot-demoapp-jenkins:${env.BUILD_NUMBER}")
+    def dockerImageTag = "springboot-demoapp-jenkins:${env.BUILD_NUMBER}"
+    def dockerHubImage = "basiljereh/springboot-demoapp-jenkins:${env.BUILD_NUMBER}"
+    def platforms = "linux/amd64,linux/arm64"  // Multi-platform support
+
+    try {
+        notifyBuild('STARTED')
+
+        stage('Clone Repo') {
+            git url: 'https://github.com/basil1120/springboot-demoapp-jenkins.git',
+                credentialsId: 'CREDENTIALS_GITHUB',
+                branch: 'main'
+        }
+
+        stage('Setup Docker Buildx') {
+            script {
+                sh 'docker buildx create --use || true' // Ensure Buildx is enabled
+                sh 'docker buildx inspect --bootstrap'
+            }
+        }
+
+        stage('Docker Login') {
+            script {
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS',
+                                                 usernameVariable: 'DOCKER_USER',
+                                                 passwordVariable: 'DOCKER_PASS')]) {
+                    sh "docker login -u $DOCKER_USER -p $DOCKER_PASS"
+                }
+            }
+        }
+
+        stage('Build and Push Docker Image') {
+            script {
+                sh """
+                docker buildx build --platform=${platforms} \
+                    -t ${dockerImageTag} \
+                    -t docker.io/${dockerHubImage} \
+                    --push .
+                """
+            }
+        }
+
+        stage('Deploy Docker Container') {
+            script {
+                echo "Deploying Docker Image: ${dockerImageTag}"
+
+                // Stop and remove existing container if running
+                sh "docker stop springboot-demoapp-jenkins || true"
+                sh "docker rm springboot-demoapp-jenkins || true"
+
+                // Run the new container
+                sh """
+                docker run --name springboot-demoapp-jenkins -d -p 8181:8181 ${dockerImageTag}
+                """
+            }
+        }
+    } catch (e) {
+        currentBuild.result = "FAILED"
+        throw e
+    } finally {
+        notifyBuild(currentBuild.result)
     }
-    stage('Deploy docker'){
-          echo "Docker Image Tag Name: ${dockerImageTag}"
-          sh "docker stop springboot-demoapp-jenkins || true && docker rm springboot-demoapp-jenkins || true"
-          sh "docker run --name springboot-demoapp-jenkins -d -p 8181:8181 springboot-demoapp-jenkins:${env.BUILD_NUMBER}"
-    }
-}catch(e){
-    currentBuild.result = "FAILED"
-    throw e
-}finally{
-    notifyBuild(currentBuild.result)
- }
 }
 
-def notifyBuild(String buildStatus = 'STARTED'){
+def notifyBuild(String buildStatus = 'STARTED') {
+    buildStatus = buildStatus ?: 'SUCCESSFUL'
 
-  // build status of null means successful
-  buildStatus =  buildStatus ?: 'SUCCESSFUL'
+    def now = new Date()
+    def subject_email = "Spring Boot Deployment - ${buildStatus}"
+    def details = """<p><strong>Status:</strong> ${buildStatus}</p>
+    <p><strong>Job:</strong> ${env.JOB_NAME} - Build [${env.BUILD_NUMBER}]</p>
+    <p><strong>Time:</strong> ${now}</p>
+    <p>Check console output at <a href="${env.BUILD_URL}">${env.JOB_NAME}</a></p>"""
 
-  // Default values
-  def colorName = 'RED'
-  def colorCode = '#FF0000'
-  def now = new Date()
-
-  // message
-  def subject = "${buildStatus}, Job: ${env.JOB_NAME} FRONTEND - Deployment Sequence: [${env.BUILD_NUMBER}] "
-  def summary = "${subject} - Check On: (${env.BUILD_URL}) - Time: ${now}"
-  def subject_email = "Spring boot Deployment"
-  def details = """<p>${buildStatus} JOB </p>
-    <p>Job: ${env.JOB_NAME} - Deployment Sequence: [${env.BUILD_NUMBER}] - Time: ${now}</p>
-    <p>Check console output at "<a href="${env.BUILD_URL}">${env.JOB_NAME}</a>"</p>"""
-
-  // Email notification
-  emailext (
-     to: "basiljereh@gmail.com",
-     subject: subject_email,
-     body: details,
-     recipientProviders: [[$class: 'DevelopersRecipientProvider']]
-  )
-
+    emailext(
+        to: "basiljereh@gmail.com",
+        subject: subject_email,
+        body: details,
+        recipientProviders: [[$class: 'DevelopersRecipientProvider']]
+    )
 }

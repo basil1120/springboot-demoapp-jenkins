@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class SpringbootDemoappJenkinsApplication {
+public class JenkinsApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SpringbootDemoappJenkinsApplication.class, args);
+        SpringApplication.run(JenkinsApplication.class, args);
     }
 
 }
