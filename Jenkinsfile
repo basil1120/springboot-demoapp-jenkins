@@ -28,9 +28,9 @@ node {
             }
         }
 
-        stage('Docker Login - STEP 1') {
-            sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
-        }
+//         stage('Docker Login - STEP 1') {
+//             sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
+//         }
 
         /*
         stage('Docker Login - STEP 2') {
@@ -47,7 +47,15 @@ node {
         stage('Build and Push Docker Image') {
             script {
                 withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                    sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}"
+
+                    // Securely log in without exposing secrets
+                    echo "********* Start Login Phase 1 ********* "
+                    sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
+                    echo "*********  End Login Phase 1 ********* "
+
+                    echo "---- START Login Phase 2 ----"
+                    sh '/usr/local/bin/docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}'
+                    echo "---- END Login Phase 2 ----"
 
                     echo "Building and Pushing Image Name: ${dockerImageTag}"
                     sh """
@@ -77,7 +85,7 @@ node {
         stage('Deploy Docker Container') {
             script {
                 echo "Deploying Docker Image: ${dockerImageTag}"
-
+                sh 'export PATH=$PATH:/usr/local/bin/docker'
                 // Stop and remove existing container if running
                 sh "docker stop springboot-demoapp-jenkins || true"
                 sh "docker rm springboot-demoapp-jenkins || true"
