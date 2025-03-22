@@ -11,7 +11,7 @@
 #EXPOSE $PORT
 #ENTRYPOINT ["java","-jar","-Xmx1024M","-Dserver.port=${PORT}","app.jar"]
 # Docker Build Maven Stage
-#FROM maven:3-openjdk-17-alpine AS build
+
 FROM maven:3.6.3-openjdk-17 AS build
 # Copy folder into Docker container
 WORKDIR /opt/app
@@ -21,7 +21,7 @@ COPY ./ /opt/app
 RUN mvn clean install -DskipTests
 
 # Run Spring Boot in Docker with Java 17
-FROM openjdk:17-jdk-alpine
+FROM openjdk:17-jdk-slim
 COPY --from=build /opt/app/target/*.jar app.jar
 ENV PORT 8181
 EXPOSE $PORT
