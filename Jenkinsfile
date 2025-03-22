@@ -1,5 +1,7 @@
 node {
-    def WORKSPACE = "/var/lib/jenkins/workspace/springboot-demoapp-jenkins"
+// Maven:  -B -f /Users/basam/.jenkins/workspace/springboot-demoapp-jenkins/pom.xml install
+    def WORKSPACE = "/Users/basam/.jenkins/workspace/springboot-demoapp-jenkins"
+    //def WORKSPACE = "/var/lib/jenkins/workspace/springboot-demoapp-jenkins"
     def dockerImageTag = "springboot-demoapp-jenkins${env.BUILD_NUMBER}"
 try{
     notifyBuild('STARTED')
@@ -7,7 +9,7 @@ try{
         // for display purposes
         // Get some code from a GitHub repository
         git url: 'https://github.com/basil1120/springboot-demoapp-jenkins.git',
-            credentialsId: 'springdeploy-user',
+            credentialsId: 'CREDENTIALS_GITHUB',
             branch: 'main'
      }
     stage('Build docker') {
