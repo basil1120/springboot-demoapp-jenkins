@@ -13,7 +13,10 @@ node {
         }
 
         stage('Ensure Docker is Available') {
-            sh 'export PATH=$PATH:/opt/homebrew/bin && docker version'
+            echo "------- Starting Setting HOME_PATH variables ---------"
+            //sh 'export PATH=$PATH:/opt/homebrew/bin && docker version'
+            sh 'export PATH=$PATH:/usr/local/bin/docker'
+            echo "------- Completing Setting HOME_PATH variables ---------"
         }
 
         stage('Setup Docker Buildx') {
