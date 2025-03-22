@@ -18,6 +18,30 @@ node {
             echo "------- Completing Setting HOME_PATH variables ---------"
         }
 
+        stage('Clean Up Docker System') {
+            script {
+                // Capture output of docker system prune
+                def systemPruneOutput = sh(script: '/usr/local/bin/docker system prune -f', returnStdout: true).trim()
+                echo "Docker System Prune Output:\n${systemPruneOutput}"
+
+                // Extract reclaimed space from the output
+                def reclaimedSpaceSystem = extractReclaimedSpace(systemPruneOutput)
+                echo "Reclaimed space from Docker System Prune: ${reclaimedSpaceSystem}"
+
+                // Capture output of docker builder prune
+                def builderPruneOutput = sh(script: '/usr/local/bin/docker builder prune -f', returnStdout: true).trim()
+                echo "Docker Builder Prune Output:\n${builderPruneOutput}"
+
+                // Extract reclaimed space from the output
+                def reclaimedSpaceBuilder = extractReclaimedSpace(builderPruneOutput)
+                echo "Reclaimed space from Docker Builder Prune: ${reclaimedSpaceBuilder}"
+
+                // Calculate total reclaimed space
+                def totalReclaimedSpace = reclaimedSpaceSystem + reclaimedSpaceBuilder
+                echo "Total reclaimed disk space: ${totalReclaimedSpace}"
+            }
+        }
+
         stage('Setup Docker Buildx') {
             script {
                 sh '/usr/local/bin/docker buildx create --use || true'
@@ -63,12 +87,62 @@ node {
                 """
             }
         }
+
+        stage('Post-Build Cleanup') {
+            script {
+                // Capture output of docker system prune
+                def systemPruneOutput = sh(script: '/usr/local/bin/docker system prune -f', returnStdout: true).trim()
+                echo "Docker System Prune Output:\n${systemPruneOutput}"
+
+                // Extract reclaimed space from the output
+                def reclaimedSpaceSystem = extractReclaimedSpace(systemPruneOutput)
+                echo "Reclaimed space from Docker System Prune: ${reclaimedSpaceSystem}"
+
+                // Capture output of docker builder prune
+                def builderPruneOutput = sh(script: '/usr/local/bin/docker builder prune -f', returnStdout: true).trim()
+                echo "Docker Builder Prune Output:\n${builderPruneOutput}"
+
+                // Extract reclaimed space from the output
+                def reclaimedSpaceBuilder = extractReclaimedSpace(builderPruneOutput)
+                echo "Reclaimed space from Docker Builder Prune: ${reclaimedSpaceBuilder}"
+
+                // Calculate total reclaimed space
+                def totalReclaimedSpace = reclaimedSpaceSystem + reclaimedSpaceBuilder
+                echo "Total reclaimed disk space: ${totalReclaimedSpace}"
+            }
+        }
     } catch (e) {
         currentBuild.result = "FAILED"
         throw e
     } finally {
         notifyBuild(currentBuild.result)
     }
+}
+
+// Helper function to extract reclaimed space from prune output
+def extractReclaimedSpace(String output) {
+    def reclaimedSpace = 0
+    def match = output =~ /Total reclaimed space:\s+([\d.]+)\s*(\w+)/
+    if (match) {
+        def size = match[0][1].toFloat()
+        def unit = match[0][2]
+        // Convert to bytes for consistency
+        switch (unit.toLowerCase()) {
+            case "kb":
+                reclaimedSpace = size * 1024
+                break
+            case "mb":
+                reclaimedSpace = size * 1024 * 1024
+                break
+            case "gb":
+                reclaimedSpace = size * 1024 * 1024 * 1024
+                break
+            default:
+                reclaimedSpace = size // Assume bytes
+                break
+        }
+    }
+    return reclaimedSpace
 }
 
 def notifyBuild(String buildStatus = 'STARTED') {
