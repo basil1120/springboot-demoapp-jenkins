@@ -14,7 +14,6 @@ node {
 
         stage('Ensure Docker is Available') {
             echo "------- Starting Setting HOME_PATH variables ---------"
-            //sh 'export PATH=$PATH:/opt/homebrew/bin && docker version'
             sh 'export PATH=$PATH:/usr/local/bin/docker'
             echo "------- Completing Setting HOME_PATH variables ---------"
         }
@@ -28,9 +27,9 @@ node {
             }
         }
 
-//         stage('Docker Login - STEP 1') {
-//             sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
-//         }
+        stage('Docker Login - STEP 1') {
+            sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
+        }
 
         /*
         stage('Docker Login - STEP 2') {
@@ -43,10 +42,12 @@ node {
                 }
             }
         }*/
-
+        /*
         stage('Build and Push Docker Image') {
             script {
-                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS',
+                usernameVariable: 'DOCKER_USERNAME',
+                passwordVariable: 'DOCKER_PASSWORD')]) {
 
                     // Securely log in without exposing secrets
                     echo "********* Start Login Phase 1 ********* "
@@ -66,12 +67,18 @@ node {
                     """
                 }
             }
-        }
+        }*/
 
-        /*
+
         stage('Build and Push Docker Image') {
             script {
                 echo "Building Image Name : ${dockerImageTag}"
+
+                echo "************************************************"
+                sh 'echo "$DOCKER_USERNAME"'
+                sh 'echo "$DOCKER_PASSWORD"'
+                echo "************************************************"
+
                 sh 'echo "$DOCKER_PASSWORD" | /usr/local/bin/docker login -u "$DOCKER_USERNAME" --password-stdin'
                 sh """
                 /usr/local/bin/docker buildx build --platform=${platforms} \
@@ -80,7 +87,7 @@ node {
                     --push .
                 """
             }
-        }*/
+        }
 
         stage('Deploy Docker Container') {
             script {
