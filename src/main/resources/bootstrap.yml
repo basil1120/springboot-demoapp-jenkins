@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: springboot-demoapp-jenkins
+  config:
+    import: 'configserver:'
+  cloud:
+    config:
+      uri: http://config-server:8888
+      fail-fast: true
+      retry:
+        initial-interval: 1000
+        max-attempts: 6
+        max-interval: 2000
+        multiplier: 1.1
+    vault:
+      enabled: true
+      uri: http://vault:8200
+      authentication: KUBERNETES
+      kubernetes:
+        role: springboot-demoapp-jenkins
+        service-account-token-file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      kv:
+        backend: secret
+        default-context: springboot-demoapp-jenkins

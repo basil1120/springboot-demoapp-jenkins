@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Security – auto-added by modernization agent
+.env
+*.pem
+*.key
+*.p12
+*.jks
+env.properties
+application-local.yml
+application-local.properties

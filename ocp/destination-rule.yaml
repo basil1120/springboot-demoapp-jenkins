@@ -1,0 +1,38 @@
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: springboot-demoapp-jenkins
+  namespace: apps-springboot-demoapp-jenkins
+  labels:
+    app: springboot-demoapp-jenkins
+    app.kubernetes.io/name: springboot-demoapp-jenkins
+    app.kubernetes.io/managed-by: modernization-agent
+    pipeline: "maturity-V1"
+  annotations:
+    app.kubernetes.io/maintainer: "(_maintainer)"
+spec:
+  host: springboot-demoapp-jenkins
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        h2UpgradePolicy: DEFAULT
+        http1MaxPendingRequests: 100
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 10
+        maxRetries: 3
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+    loadBalancer:
+      simple: LEAST_REQUEST
+  subsets:
+    - name: stable
+      labels:
+        version: "stable"
+    - name: canary
+      labels:
+        version: "canary"

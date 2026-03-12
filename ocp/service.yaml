@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-demoapp-jenkins
+  namespace: apps-springboot-demoapp-jenkins
+  labels:
+    app: springboot-demoapp-jenkins
+    app.kubernetes.io/name: springboot-demoapp-jenkins
+    app.kubernetes.io/part-of: springboot-demoapp-jenkins
+    app.kubernetes.io/managed-by: modernization-agent
+    pipeline: "maturity-V1"
+  annotations:
+    app.kubernetes.io/maintainer: "(_maintainer)"
+    app.kubernetes.io/git-branch: "(_git-branch)"
+    app.kubernetes.io/git-commit: "(_git-commit)"
+    app.kubernetes.io/git-url: "(_git-url)"
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      protocol: TCP
+  selector:
+    app: springboot-demoapp-jenkins

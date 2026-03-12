@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot-demoapp-jenkins
+  namespace: apps-springboot-demoapp-jenkins
+  labels:
+    app: springboot-demoapp-jenkins
+    app.kubernetes.io/name: springboot-demoapp-jenkins
+    app.kubernetes.io/part-of: springboot-demoapp-jenkins
+    app.kubernetes.io/managed-by: modernization-agent
+    pipeline: "maturity-V1"
+    version: "0.0.1-SNAPSHOT"
+  annotations:
+    app.kubernetes.io/maintainer: "(_maintainer)"
+    app.kubernetes.io/git-branch: "(_git-branch)"
+    app.kubernetes.io/git-commit: "(_git-commit)"
+    app.kubernetes.io/git-url: "(_git-url)"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: springboot-demoapp-jenkins
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: springboot-demoapp-jenkins
+        version: "0.0.1-SNAPSHOT"
+      annotations:
+        sidecar.istio.io/inject: "True"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/actuator/prometheus"
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+      serviceAccountName: springboot-demoapp-jenkins
+      tolerations:
+        - key: "app"
+          operator: "Equal"
+          value: "springboot-demoapp-jenkins"
+          effect: "NoSchedule"
+      containers:
+        - name: springboot-demoapp-jenkins
+          image: harbor.devops.kcbgroup.com/apps/springboot-demoapp-jenkins:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: springboot-demoapp-jenkins-config
+            - secretRef:
+                name: springboot-demoapp-jenkins-secret
+                optional: true
+          env:
+            - name: TZ
+              value: "Africa/Nairobi"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "kubernetes"
+            - name: JAVA_OPTS
+              value: "-XX:+UseG1GC -XX:MaxRAMPercentage=75.0"
+
+            - name: JAVA_TOOL_OPTIONS
+              value: "-javaagent:/app/opentelemetry-javaagent.jar"
+            - name: OTEL_SERVICE_NAME
+              value: "springboot-demoapp-jenkins"
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "http://otel-collector.observability.svc.cluster.local:4317"
+            - name: OTEL_EXPORTER_OTLP_PROTOCOL
+              value: "grpc"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
+            - name: OTEL_METRICS_EXPORTER
+              value: "otlp"
+            - name: OTEL_LOGS_EXPORTER
+              value: "otlp"
+
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            failureThreshold: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}

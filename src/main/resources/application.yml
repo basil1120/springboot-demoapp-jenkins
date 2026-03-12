@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: springboot-demoapp-jenkins
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
+server:
+  port: 8181
+  shutdown: graceful
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: springboot-demoapp-jenkins
+logging:
+  level:
+    root: INFO
+    com.bank.springboot.demoapp.jenkins: DEBUG

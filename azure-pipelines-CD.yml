@@ -1,0 +1,50 @@
+parameters:
+  - name: agentPool
+    type: object
+    default:
+      name: 'managed-devops-pool-02'
+  - name: pipelineTemplate
+    type: object
+    default:
+      ref: 'main'
+      vargroup: pd
+
+resources:
+  pipelines:
+    - pipeline: CI-pipeline
+      source: 'springboot-demoapp-jenkins-CI'
+      trigger:
+        branches:
+          exclude:
+            - release/*
+            - main
+            - refs/pull/*
+  repositories:
+    - repository: azure-build-pipeline
+      type: git
+      name: KCB-DevOps/azure-build-pipeline
+      ref: ${{ parameters.pipelineTemplate.ref }}
+
+trigger: none
+
+variables:
+  - group: 'kcb-global-pipeline-variables-${{ parameters.pipelineTemplate.vargroup }}'
+  - name: projectName
+    value: 'springboot-demoapp-jenkins'
+  - name: serviceName
+    value: 'springboot-demoapp-jenkins'
+  - name: scrumTeam
+    value: '(_scrum-team)'
+  - name: version
+    value: 'v1'
+
+stages:
+  - template: /deployment/ocp/main.yml@azure-build-pipeline
+    parameters:
+      projectName: ${{ variables.projectName }}
+      serviceName: ${{ variables.serviceName }}
+      agentPool: ${{ parameters.agentPool }}
+      packagingSourcePath: 'ocp'
+      pipelineTemplate: ${{ parameters.pipelineTemplate }}
+
+
